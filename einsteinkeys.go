@@ -32,9 +32,9 @@ func Validate(keyString string) (err error) {
 	color.Cyan(`                                                 __/ |`)
 	color.Cyan(`                                                |___/`)
 
-	color.Cyan("Validating key: " + keyString)
+	log.Println(color.CyanString("Validating key: " + keyString))
 
-	resp, err := http.Get("https://keys.joeyli.dev/keys=" + keyString)
+	resp, err := http.Get("https://keys.joeyli.dev/keys?key=" + keyString)
 	if err != nil {
 		return
 	}
@@ -60,12 +60,12 @@ func Validate(keyString string) (err error) {
 	log.Println(color.CyanString("This software is licensed to: " + key.Licensee))
 	fmt.Println("")
 	checksum := checkSUM()
-	log.Println(color.CyanString("The Sha256Checksum of this binary is: " + checksum))
+	log.Println(color.CyanString("The Sha256Checksum of this binary is:           " + checksum))
 	log.Println(color.CyanString("The Sha256Checksum associated with this key is: " + key.Sha256Checksum))
 	if key.Sha256Checksum == checksum {
 		log.Println(color.GreenString("This binary has been verified and it's integrity is intact"))
 	} else {
-		log.Println(color.GreenString("This binary's integrity is compromised. Contact Einstein if you believe this isn't true"))
+		log.Println(color.RedString("This binary's integrity is compromised. Contact Einstein if you believe this isn't true"))
 	}
 	return
 }
