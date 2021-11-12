@@ -3,11 +3,14 @@ package einsteinkeys
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/fatih/color"
@@ -22,6 +25,22 @@ type Key struct {
 	Enabled            bool      `json:"enabled"`
 }
 
+var clear map[string]func() //create a map for storing clear funcs
+
+func init() {
+	clear = make(map[string]func()) //Initialize it
+	clear["linux"] = func() {
+		cmd := exec.Command("clear") //Linux example, its tested
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
+	clear["windows"] = func() {
+		cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
+}
+
 func Validate(keyString string) (err error) {
 	color.Cyan(`  ______ _           _       _         _  __`)
 	color.Cyan(` |  ____(_)         | |     (_)       | |/ /`)
@@ -32,10 +51,11 @@ func Validate(keyString string) (err error) {
 	color.Cyan(`                                                 __/ |`)
 	color.Cyan(`                                                |___/`)
 
-	log.Println(color.CyanString("Validating key: " + keyString))
+	color.CyanString("Validating key: " + keyString)
 
 	resp, err := http.Get("https://keys.joeyli.dev/keys?key=" + keyString)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
@@ -48,6 +68,7 @@ func Validate(keyString string) (err error) {
 	respBytes, err := io.ReadAll(resp.Body)
 	err = json.Unmarshal(respBytes, &key)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
@@ -56,17 +77,23 @@ func Validate(keyString string) (err error) {
 		return
 	}
 
-	log.Println(color.CyanString("This key is enabled"))
-	log.Println(color.CyanString("This software is licensed to: " + key.Licensee))
+	color.CyanString("This key is enabled")
+	color.CyanString("This software is licensed to: " + key.Licensee)
 	fmt.Println("")
 	checksum := checkSUM()
-	log.Println(color.CyanString("The Sha256Checksum of this binary is:           " + checksum))
-	log.Println(color.CyanString("The Sha256Checksum associated with this key is: " + key.Sha256Checksum))
-	if key.Sha256Checksum == checksum {
-		log.Println(color.GreenString("This binary has been verified and it's integrity is intact"))
-	} else {
-		log.Println(color.RedString("This binary's integrity is compromised. Contact Einstein if you believe this isn't true"))
+	color.CyanString("The Sha256Checksum of this binary is:           " + checksum)
+	color.CyanString("The Sha256Checksum associated with this key is: " + key.Sha256Checksum)
+	if key.Sha256Checksum != checksum {
+		color.RedString("This binary's integrity is compromised. Contact Einstein if you believe this isn't true")
+		err = errors.New("compromised")
+		return
 	}
+
+	color.GreenString("This binary has been verified and it's integrity is intact")
+	color.CyanString("Continueing program in 3 seconds...")
+	time.Sleep(time.Second * 3)
+
+	CallClear()
 	return
 }
 
@@ -83,4 +110,13 @@ func checkSUM() string {
 	}
 
 	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+func CallClear() {
+	value, ok := clear[runtime.GOOS] //runtime.GOOS -> linux, windows, darwin etc.
+	if ok {                          //if we defined a clear func for that platform:
+		value() //we execute it
+	} else { //unsupported platform
+		panic("Your platform is unsupported! I can't clear terminal screen :(")
+	}
 }
