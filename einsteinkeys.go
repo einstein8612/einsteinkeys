@@ -87,7 +87,7 @@ func Validate(keyString string) (err error) {
 		return fmt.Errorf("Errored")
 	}
 
-	color.GreenString("This binary has been verified and it's integrity is intact")
+	color.Green("This binary has been verified and it's integrity is intact")
 	color.Cyan("Continueing program in 3 seconds...")
 	time.Sleep(time.Second * 3)
 
