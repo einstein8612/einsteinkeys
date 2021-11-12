@@ -1,4 +1,4 @@
-module joeyli.dev/einsteinkeys
+module github.com/einstein8612/einsteinkeys
 
 go 1.16
 
